@@ -12,11 +12,11 @@ authors:
 
 
 distribution:
-  - source-file: "src/wsjcpp_parse_cpp.cpp"
-    target-file: "wsjcpp_parse_cpp.cpp"
+  - source-file: "src/wsjcpp_parser_cpp.cpp"
+    target-file: "wsjcpp_parser_cpp.cpp"
     type: "source-code"
-  - source-file: "src/wsjcpp_parse_cpp.h"
-    target-file: "wsjcpp_parse_cpp.h"
+  - source-file: "src/wsjcpp_parser_cpp.h"
+    target-file: "wsjcpp_parser_cpp.h"
     type: "source-code"
 
 dependencies:
@@ -26,4 +26,9 @@ dependencies:
     origin: "https://github.com/"
     installation-dir: "./src.wsjcpp/wsjcpp_core"
     installation-datetime: "Mon, 19 Dec 2022 17:19:42 GMT"
+
+unit-tests:
+  cases:
+    - name: "ParseFunction"
+      description: ""
 

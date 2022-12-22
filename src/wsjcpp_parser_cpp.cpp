@@ -4,9 +4,9 @@
 #include <algorithm>
 
 // ---------------------------------------------------------------------
-// CppIncludeParserCursor
+// WsjcppParserCppCursor
 
-CppIncludeParserCursor::CppIncludeParserCursor(const std::string &sContent) {
+WsjcppParserCppCursor::WsjcppParserCppCursor(const std::string &sContent) {
     m_sContent = sContent;
     m_nLength = m_sContent.length();
     m_nCurrentPos = -1;
@@ -14,7 +14,7 @@ CppIncludeParserCursor::CppIncludeParserCursor(const std::string &sContent) {
     m_c1 = 0x0;
 }
 
-bool CppIncludeParserCursor::next() {
+bool WsjcppParserCppCursor::next() {
     m_nCurrentPos = m_nCurrentPos + 1;
     m_c0 = 0x0;
     m_c1 = 0x0;
@@ -27,15 +27,15 @@ bool CppIncludeParserCursor::next() {
     return m_nCurrentPos < m_nLength;
 }
 
-char CppIncludeParserCursor::getC0() {
+char WsjcppParserCppCursor::getC0() {
     return m_c0;
 }
 
-char CppIncludeParserCursor::getC1() {
+char WsjcppParserCppCursor::getC1() {
     return m_c1;
 }
 
-bool CppIncludeParserCursor::isSeparatedChar() {
+bool WsjcppParserCppCursor::isSeparatedChar() {
     return 
         m_c0 == ','
         || m_c0 == '#'
@@ -44,7 +44,11 @@ bool CppIncludeParserCursor::isSeparatedChar() {
         || m_c0 == ';'
         || m_c0 == '{'
         || m_c0 == '}'
+        || m_c0 == '='
+        || m_c0 == '+'
         || m_c0 == '>'
+        || m_c0 == ']'
+        || m_c0 == '['
         || m_c0 == '<'
         || m_c0 == '('
         || m_c0 == ')'
@@ -53,39 +57,50 @@ bool CppIncludeParserCursor::isSeparatedChar() {
     ;
 }
 
-bool CppIncludeParserCursor::isSkipEmptyChars() {
+bool WsjcppParserCppCursor::isSkipEmptyChars() {
     return m_c0 == ' ' || m_c0 == '\n' || m_c0 == '\t';
 }
 
-bool CppIncludeParserCursor::isNumeric() {
+bool WsjcppParserCppCursor::isNumeric() {
     return m_c0 >= '0' && m_c0 <= '9';
+}
+
+bool WsjcppParserCppCursor::isAllowedPair() {
+    return (m_c0 == ':' && m_c1 == ':')
+        || (m_c0 == '=' && m_c1 == '=')
+        || (m_c0 == '>' && m_c1 == '=')
+        || (m_c0 == '<' && m_c1 == '=')
+        || (m_c0 == '+' && m_c1 == '+')
+        || (m_c0 == '-' && m_c1 == '-')
+        || (m_c0 == '-' && m_c1 == '>')
+        || (m_c0 == '+' && m_c1 == '=')
+        || (m_c0 == '-' && m_c1 == '=')
+        || (m_c0 == '*' && m_c1 == '=')
+    ;
 }
 
 
 // ---------------------------------------------------------------------
-// CppIncludeParser
+// WsjcppParserCpp
 
-CppIncludeParser::CppIncludeParser() {
-    TAG = "CppIncludeParser";
-    m_nStatus = CppIncludeParserStatus::NONE;
+WsjcppParserCpp::WsjcppParserCpp() {
+    TAG = "WsjcppParserCpp";
+    m_nStatus = WsjcppParserCppStatus::NONE;
 }
 
-bool CppIncludeParser::parseFile(const std::string &sFilepath) {
+bool WsjcppParserCpp::parseFile(const std::string &sFilepath) {
     std::string sContent;
     if (!WsjcppCore::readTextFile(sFilepath, sContent)) {
         return false;
     }
 
     sContent = removeComments(sContent);
-    std::vector<std::string> vWords = parseByWords(sContent);
-
-    for (int i = 0; i < vWords.size(); ++i) {
-        std::cout << vWords[i] << std::endl;
-    }
+    m_vWords.clear();
+    parseByWords(sContent);
     return true;
 }
 
-std::string CppIncludeParser::removeComments(const std::string &sContent) {
+std::string WsjcppParserCpp::removeComments(const std::string &sContent) {
     int nLen = sContent.length();
     std::string sNewContent = "";
     bool bMultilineComment = false;
@@ -132,8 +147,8 @@ std::string CppIncludeParser::removeComments(const std::string &sContent) {
     return sNewContent;
 }
 
-std::vector<std::string> CppIncludeParser::parseByWords(const std::string &sContent) {
-    CppIncludeParserCursor cur(sContent);
+void WsjcppParserCpp::parseByWords(const std::string &sContent) {
+    WsjcppParserCppCursor cur(sContent);
 
     int nLen = sContent.length();
     m_sBuffer = "";
@@ -145,32 +160,26 @@ std::vector<std::string> CppIncludeParser::parseByWords(const std::string &sCont
             if (cur.isSkipEmptyChars()) {
                 continue; // skip empty lines
             }
-            if (c0 == '{' || c0 == '}') {
-                m_sBuffer += c0;
-                flushBuffer();
-                continue;
-            }
 
-            if (
-                (c0 == ':' && c1 == ':')
-                || (c0 == '=' && c1 == '=')
-                || (c0 == '>' && c1 == '=')
-                || (c0 == '<' && c1 == '=')
-                || (c0 == '+' && c1 == '=')
-                || (c0 == '-' && c1 == '=')
-                || (c0 == '*' && c1 == '=')
-            ) {
-                m_sBuffer += c0;
-                m_sBuffer += c1;
+            if (c0 == '\\' && c1 == '\n') { // continue line
                 cur.next(); // skip c1
                 flushBuffer();
                 continue;
             }
 
-            if (
-                (c0 == ':' && c1 != ':')
-                || (c0 == '=' && c1 != '=')
-            ) {
+            if (cur.isAllowedPair()) {
+                m_sBuffer += c0;
+                m_sBuffer += c1;
+                flushBuffer();
+                cur.next(); // skip c1
+                continue;
+            }
+
+            if (c0 == '(') {
+                std::cout << "HERE" << std::endl;
+            }
+
+            if (cur.isSeparatedChar()) {
                 m_sBuffer += c0;
                 flushBuffer();
                 continue;
@@ -186,17 +195,8 @@ std::vector<std::string> CppIncludeParser::parseByWords(const std::string &sCont
                 continue;
             }
 
-            if (cur.isSeparatedChar()) {
-                // if (c0 == '<') {
-                //     std::cout << "HERE" << std::endl;
-                // }
-                m_sBuffer += c0;
-                flushBuffer();
-                continue;
-            }
-
-            if (m_nStatus == CppIncludeParserStatus::NONE && c0 == '"') {
-                m_nStatus = CppIncludeParserStatus::START_PARSE_STRING;
+            if (m_nStatus == WsjcppParserCppStatus::NONE && c0 == '"') {
+                m_nStatus = WsjcppParserCppStatus::START_PARSE_STRING;
                 m_sBuffer += c0;
                 continue;
             }
@@ -204,7 +204,7 @@ std::vector<std::string> CppIncludeParser::parseByWords(const std::string &sCont
             throwErrorUnknownSymbol(c0, "first char");
         }
 
-        if (m_nStatus == CppIncludeParserStatus::START_PARSE_STRING) {
+        if (m_nStatus == WsjcppParserCppStatus::START_PARSE_STRING) {
             if (c0 == '\\') { // string escaping char
                 m_sBuffer += c0;
                 cur.next();
@@ -215,7 +215,7 @@ std::vector<std::string> CppIncludeParser::parseByWords(const std::string &sCont
             if (c0 == '"') { // end string
                 m_sBuffer += c0;
                 flushBuffer();
-                m_nStatus = CppIncludeParserStatus::NONE;
+                m_nStatus = WsjcppParserCppStatus::NONE;
                 continue;
             }
 
@@ -227,20 +227,24 @@ std::vector<std::string> CppIncludeParser::parseByWords(const std::string &sCont
             flushBuffer();
             continue;
         }
-        
+
+        if (cur.isAllowedPair()) {
+            flushBuffer();
+            m_sBuffer += c0;
+            m_sBuffer += c1;
+            flushBuffer();
+            cur.next(); // skip c1
+            continue;
+        }
+
         if (cur.isSeparatedChar()) {
             flushBuffer();
             m_sBuffer += c0;
+            flushBuffer();
             continue;
         }
 
         if (isAlphabet || cur.isNumeric() || c0 == '_' ) {
-            m_sBuffer += c0;
-            continue;
-        }
-
-        if (c0 == ':' && c1 != ':')  {
-            flushBuffer();
             m_sBuffer += c0;
             continue;
         }
@@ -251,17 +255,20 @@ std::vector<std::string> CppIncludeParser::parseByWords(const std::string &sCont
     if (m_sBuffer.length() > 0) {
         m_vWords.push_back(m_sBuffer);
     }
+}
+
+const std::vector<std::string> &WsjcppParserCpp::getWords() {
     return m_vWords;
 }
 
-void CppIncludeParser::flushBuffer() {
+void WsjcppParserCpp::flushBuffer() {
     if (m_sBuffer.length() > 0) {
         m_vWords.push_back(m_sBuffer);
         m_sBuffer = "";
     }
 }
 
-void CppIncludeParser::throwErrorUnknownSymbol(char c0, const std::string &sMessage) {
+void WsjcppParserCpp::throwErrorUnknownSymbol(char c0, const std::string &sMessage) {
 
     std::string sError = "[" + sMessage + "] Unknown simbol '";
     sError += c0;

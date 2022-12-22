@@ -5,14 +5,14 @@
 #include <vector>
 #include <map>
 
-enum class CppIncludeParserStatus {
+enum class WsjcppParserCppStatus {
     NONE = 1,
     START_PARSE_STRING = 2,
 };
 
-class CppIncludeParserCursor {
+class WsjcppParserCppCursor {
     public:
-        CppIncludeParserCursor(const std::string &sContent);
+        WsjcppParserCppCursor(const std::string &sContent);
         bool next();
 
         char getC0();
@@ -21,6 +21,7 @@ class CppIncludeParserCursor {
         bool isSeparatedChar();
         bool isSkipEmptyChars();
         bool isNumeric();
+        bool isAllowedPair();
 
     private:
         std::string m_sContent;
@@ -31,13 +32,14 @@ class CppIncludeParserCursor {
 
 };
 
-class CppIncludeParser {
+class WsjcppParserCpp {
     public:
-        CppIncludeParser();
+        WsjcppParserCpp();
 
         bool parseFile(const std::string &sFilepath);
         std::string removeComments(const std::string &sContent);
-        std::vector<std::string> parseByWords(const std::string &sContent);
+        void parseByWords(const std::string &sContent);
+        const std::vector<std::string> &getWords();
 
     private:
 
@@ -47,7 +49,7 @@ class CppIncludeParser {
         std::string TAG;
         std::string m_sBuffer;
         std::vector<std::string> m_vWords;
-        CppIncludeParserStatus m_nStatus;
+        WsjcppParserCppStatus m_nStatus;
 };
 
 #endif // WSJCPP_PARSER_CPP_H

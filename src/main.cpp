@@ -18,8 +18,10 @@ int main(int argc, const char* argv[]) {
 
     WsjcppParserCpp parser;
 
-    std::vector<std::string> vFiles;
-    vFiles.push_back("src.wsjcpp/wsjcpp_core/wsjcpp_core.h");
+    std::vector<std::string> vFiles = WsjcppCore::getListOfFiles("test-files");
+    if (vFiles.size() == 0) {
+        vFiles.push_back("src.wsjcpp/wsjcpp_core/wsjcpp_core.h");
+    }
     for (int i = 0; i < vFiles.size(); ++i) {
         if (!parser.parseFile(vFiles[i])) {
             WsjcppLog::err(TAG, "Could not parse file " + vFiles[i]);

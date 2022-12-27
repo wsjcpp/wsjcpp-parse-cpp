@@ -20,12 +20,17 @@ class WsjcppParserCppCursor {
         bool isNumeric();
         bool isAllowedPair();
 
+        int getLineNumber();
+        int getPositionInLine();
+
     private:
         std::string m_sContent;
         char m_c0;
         char m_c1;
         int m_nCurrentPos;
         int m_nLength;
+        int m_nLineNumber;
+        int m_nPositionInLine;
 };
 
 enum class WsjcppParserCppLayer0Status {
@@ -37,27 +42,39 @@ enum class WsjcppParserCppLayer0Status {
 
 class WsjcppParserCppLayer0Token {
     public:
-        WsjcppParserCppLayer0Token(const std::string &sToken);
+        WsjcppParserCppLayer0Token(
+            const std::string &sToken,
+            int nLine,
+            int nPositionInLine,
+            const std::string &sFilepath
+        );
         const std::string &getValue();
     private:
         std::string m_sToken;
+        int m_nLine;
+        int m_nPositionInLine;
+        std::string m_sFilepath;
 };
 
 class WsjcppParserCppLayer0 {
     public:
         WsjcppParserCppLayer0();
-        bool parseByTokens(const std::string &sContent);
+        bool parseByTokens(const std::string &sContent, const std::string &sContentName);
         const std::vector<std::string> &getTokens();
         
 
     private:
         void flushBuffer();
+        void flushBuffer(char c0);
+        void flushBuffer(char c0, char c1);
         void throwErrorUnknownSymbol(char c0, const std::string &sMessage);
         
         std::string TAG;
         std::string m_sBuffer;
+        WsjcppParserCppCursor *m_pCur;
         WsjcppParserCppLayer0Status m_nStatus;
         std::vector<std::string> m_vTokens;
+        std::string m_sContentName;
 };
 
 class WsjcppParserCpp {

@@ -12,6 +12,8 @@ WsjcppParserCppCursor::WsjcppParserCppCursor(const std::string &sContent) {
     m_nCurrentPos = -1;
     m_c0 = 0x0;
     m_c1 = 0x0;
+    m_nLineNumber = 0;
+    m_nPositionInLine = 0;
 }
 
 bool WsjcppParserCppCursor::next() {
@@ -20,6 +22,12 @@ bool WsjcppParserCppCursor::next() {
     m_c1 = 0x0;
     if (m_nCurrentPos < m_nLength) {
         m_c0 = m_sContent[m_nCurrentPos];
+    }
+    if (m_c0 == '\n') {
+        m_nLineNumber++;
+        m_nPositionInLine = 0;
+    } else {
+        m_nPositionInLine++;
     }
     if (m_nCurrentPos + 1 < m_nLength) {
         m_c1 = m_sContent[m_nCurrentPos + 1];
@@ -79,10 +87,28 @@ bool WsjcppParserCppCursor::isAllowedPair() {
     ;
 }
 
-// ---------------------------------------------------------------------
+int WsjcppParserCppCursor::getLineNumber() {
+    return m_nLineNumber;
+}
 
-WsjcppParserCppLayer0Token::WsjcppParserCppLayer0Token(const std::string &sToken) {
+int WsjcppParserCppCursor::getPositionInLine() {
+    return m_nPositionInLine;
+}
+
+
+// ---------------------------------------------------------------------
+// WsjcppParserCppLayer0Token
+
+WsjcppParserCppLayer0Token::WsjcppParserCppLayer0Token(
+    const std::string &sToken,
+    int nLine,
+    int nPositionInLine,
+    const std::string &sFilepath
+) {
     m_sToken = sToken;
+    m_nLine = nLine;
+    m_nPositionInLine = nPositionInLine;
+    m_sFilepath = sFilepath;
 }
 
 const std::string &WsjcppParserCppLayer0Token::getValue() {
@@ -97,20 +123,20 @@ WsjcppParserCppLayer0::WsjcppParserCppLayer0() {
     m_nStatus = WsjcppParserCppLayer0Status::NONE;
 }
 
-bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
+bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent, const std::string &sContentName) {
+    m_sContentName = sContentName;
     m_vTokens.clear();
     m_nStatus = WsjcppParserCppLayer0Status::NONE;
-    
-    WsjcppParserCppCursor cur(sContent);
+    m_pCur = new WsjcppParserCppCursor(sContent);
 
     int nLen = sContent.length();
     m_sBuffer = "";
-    while (cur.next()) {
-        char c0 = cur.getC0();
-        char c1 = cur.getC1();
+    while (m_pCur->next()) {
+        char c0 = m_pCur->getC0();
+        char c1 = m_pCur->getC1();
         bool isAlphabet = (c0 >= 'a' && c0 <= 'z') || (c0 >= 'A' && c0 <= 'Z');
         if (m_sBuffer.length() == 0) {
-            if (cur.isSkipEmptyChars()) {
+            if (m_pCur->isSkipEmptyChars()) {
                 continue; // skip empty lines
             }
 
@@ -123,22 +149,20 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
             if (c0 == '/' && c1 == '*') { // start multiline comment
                 m_sBuffer += c0;
                 m_sBuffer += c1;
-                cur.next(); // skip c1
+                m_pCur->next(); // skip c1
                 m_nStatus = WsjcppParserCppLayer0Status::START_PARSE_MULTILINE_COMMENT;
                 continue;
             }
 
             if (c0 == '\\' && c1 == '\n') { // continue line
-                cur.next(); // skip c1
+                m_pCur->next(); // skip c1
                 flushBuffer();
                 continue;
             }
 
-            if (cur.isAllowedPair()) {
-                m_sBuffer += c0;
-                m_sBuffer += c1;
-                flushBuffer();
-                cur.next(); // skip c1
+            if (m_pCur->isAllowedPair()) {
+                flushBuffer(c0, c1);
+                m_pCur->next(); // skip c1
                 continue;
             }
 
@@ -146,9 +170,8 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
                 std::cout << "HERE" << std::endl;
             }
 
-            if (cur.isSeparatedChar()) {
-                m_sBuffer += c0;
-                flushBuffer();
+            if (m_pCur->isSeparatedChar()) {
+                flushBuffer(c0);
                 continue;
             }
 
@@ -157,7 +180,7 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
                 continue;
             }
 
-            if (cur.isNumeric()) { // start number, TODO state
+            if (m_pCur->isNumeric()) { // start number, TODO state
                 m_sBuffer += c0;
                 continue;
             }
@@ -185,10 +208,8 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
         // multiline comment
         if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_MULTILINE_COMMENT) {
             if (c0 == '*' && c1 == '/') {
-                m_sBuffer += c0;
-                m_sBuffer += c1;
-                cur.next(); // skip c1
-                flushBuffer();
+                flushBuffer(c0, c1);
+                m_pCur->next(); // skip c1
                 m_nStatus = WsjcppParserCppLayer0Status::NONE;
             } else {
                 m_sBuffer += c0;
@@ -199,14 +220,13 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
         if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_STRING) {
             if (c0 == '\\') { // string escaping char
                 m_sBuffer += c0;
-                cur.next();
-                m_sBuffer += cur.getC0();
+                m_sBuffer += c1;
+                m_pCur->next();
                 continue;
             }
 
             if (c0 == '"') { // end string
-                m_sBuffer += c0;
-                flushBuffer();
+                flushBuffer(c0);
                 m_nStatus = WsjcppParserCppLayer0Status::NONE;
                 continue;
             }
@@ -215,38 +235,35 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
             continue;
         }
 
-        if (cur.isSkipEmptyChars()) {
+        if (m_pCur->isSkipEmptyChars()) {
             flushBuffer();
             continue;
         }
 
-        if (cur.isAllowedPair()) {
+        if (m_pCur->isAllowedPair()) {
             flushBuffer();
-            m_sBuffer += c0;
-            m_sBuffer += c1;
-            flushBuffer();
-            cur.next(); // skip c1
+            flushBuffer(c0, c1);
+            m_pCur->next(); // skip c1
             continue;
         }
 
-        if (cur.isSeparatedChar()) {
+        if (m_pCur->isSeparatedChar()) {
             flushBuffer();
-            m_sBuffer += c0;
-            flushBuffer();
+            flushBuffer(c0);
             continue;
         }
 
-        if (isAlphabet || cur.isNumeric() || c0 == '_' ) {
+        if (isAlphabet || m_pCur->isNumeric() || c0 == '_' ) {
             m_sBuffer += c0;
             continue;
         }
 
         throwErrorUnknownSymbol(c0, "non empty buffer");
     }
-
-    if (m_sBuffer.length() > 0) {
-        m_vTokens.push_back(m_sBuffer);
-    }
+    
+    flushBuffer();
+    delete m_pCur;
+    m_pCur = nullptr;
     return true;
 }
 
@@ -256,9 +273,27 @@ const std::vector<std::string> &WsjcppParserCppLayer0::getTokens() {
 
 void WsjcppParserCppLayer0::flushBuffer() {
     if (m_sBuffer.length() > 0) {
+        WsjcppParserCppLayer0Token(
+            m_sBuffer,
+            m_pCur->getLineNumber(),
+            m_pCur->getPositionInLine(),
+            m_sContentName
+        );
+
         m_vTokens.push_back(m_sBuffer);
         m_sBuffer = "";
     }
+}
+
+void WsjcppParserCppLayer0::flushBuffer(char c0) {
+    m_sBuffer += c0;
+    flushBuffer();
+}
+
+void WsjcppParserCppLayer0::flushBuffer(char c0, char c1) {
+    m_sBuffer += c0;
+    m_sBuffer += c1;
+    flushBuffer();
 }
 
 void WsjcppParserCppLayer0::throwErrorUnknownSymbol(char c0, const std::string &sMessage) {
@@ -289,7 +324,7 @@ bool WsjcppParserCpp::parse(const std::string &sFilepath) {
         return false;
     }
     WsjcppParserCppLayer0 layer0;
-    layer0.parseByTokens(sContent);
+    layer0.parseByTokens(sContent, sFilepath);
     
     // parseByWords(sContent);
     return true;

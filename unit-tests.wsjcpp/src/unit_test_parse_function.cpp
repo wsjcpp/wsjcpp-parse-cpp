@@ -36,7 +36,7 @@ void UnitTestParseFunction::executeTest() {
         "int main(int argc, const char* argv[]) {\n"
         "    /* test1 \n"
         "    some  */\n"
-        "    std::string TAG = \"MAIN\";\n"
+        "    std::string TAG = \"MAIN\\\"test\";\n"
         "    return 0;\n"
         "};\n"
     ;
@@ -45,13 +45,13 @@ void UnitTestParseFunction::executeTest() {
         "int", "main", "(", "int", "argc", ",", "const", "char", "*", "argv", "[", "]", ")",
         "{",
             "/* test1 \n    some  */",
-            "std", "::", "string", "TAG", "=", "\"MAIN\"", ";",
+            "std", "::", "string", "TAG", "=", "\"MAIN\\\"test\"", ";",
             "return", "0", ";", 
         "}", ";",
     };
 
     WsjcppParserCppLayer0 parser;
-    parser.parseByTokens(sTestContent);
+    parser.parseByTokens(sTestContent, "UnitTestParseFunction.cpp");
     const std::vector<std::string> &vWords = parser.getTokens();
     int nMin = std::min(vWords.size(), vExpectedWords.size());
 

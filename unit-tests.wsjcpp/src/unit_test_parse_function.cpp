@@ -32,14 +32,19 @@ bool UnitTestParseFunction::doBeforeTest() {
 void UnitTestParseFunction::executeTest() {
 
     std::string sTestContent = 
+        "// hello \n"
         "int main(int argc, const char* argv[]) {\n"
+        "    /* test1 \n"
+        "    some  */\n"
         "    std::string TAG = \"MAIN\";\n"
         "    return 0;\n"
         "};\n"
     ;
     std::vector<std::string> vExpectedWords = {
+        "// hello ",
         "int", "main", "(", "int", "argc", ",", "const", "char", "*", "argv", "[", "]", ")",
         "{",
+            "/* test1 \n    some  */",
             "std", "::", "string", "TAG", "=", "\"MAIN\"", ";",
             "return", "0", ";", 
         "}", ";",

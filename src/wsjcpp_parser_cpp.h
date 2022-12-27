@@ -31,6 +31,16 @@ class WsjcppParserCppCursor {
 enum class WsjcppParserCppLayer0Status {
     NONE = 1,
     START_PARSE_STRING = 2,
+    START_PARSE_ONELINE_COMMENT = 3,
+    START_PARSE_MULTILINE_COMMENT = 4,
+};
+
+class WsjcppParserCppLayer0Token {
+    public:
+        WsjcppParserCppLayer0Token(const std::string &sToken);
+        const std::string &getValue();
+    private:
+        std::string m_sToken;
 };
 
 class WsjcppParserCppLayer0 {
@@ -41,7 +51,6 @@ class WsjcppParserCppLayer0 {
         
 
     private:
-        std::string removeComments(const std::string &sContent);
         void flushBuffer();
         void throwErrorUnknownSymbol(char c0, const std::string &sMessage);
         

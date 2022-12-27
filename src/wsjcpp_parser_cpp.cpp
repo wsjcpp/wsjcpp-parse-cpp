@@ -80,6 +80,16 @@ bool WsjcppParserCppCursor::isAllowedPair() {
 }
 
 // ---------------------------------------------------------------------
+
+WsjcppParserCppLayer0Token::WsjcppParserCppLayer0Token(const std::string &sToken) {
+    m_sToken = sToken;
+}
+
+const std::string &WsjcppParserCppLayer0Token::getValue() {
+    return m_sToken;
+}
+
+// ---------------------------------------------------------------------
 // WsjcppParserCppLayer0
 
 WsjcppParserCppLayer0::WsjcppParserCppLayer0() {
@@ -88,13 +98,12 @@ WsjcppParserCppLayer0::WsjcppParserCppLayer0() {
 }
 
 bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
-    std::string sContent2 = removeComments(sContent);
     m_vTokens.clear();
     m_nStatus = WsjcppParserCppLayer0Status::NONE;
     
-    WsjcppParserCppCursor cur(sContent2);
+    WsjcppParserCppCursor cur(sContent);
 
-    int nLen = sContent2.length();
+    int nLen = sContent.length();
     m_sBuffer = "";
     while (cur.next()) {
         char c0 = cur.getC0();
@@ -103,6 +112,20 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
         if (m_sBuffer.length() == 0) {
             if (cur.isSkipEmptyChars()) {
                 continue; // skip empty lines
+            }
+
+            if (c0 == '/' && c1 == '/') { // start oneline comment
+                m_sBuffer += c0;
+                m_nStatus = WsjcppParserCppLayer0Status::START_PARSE_ONELINE_COMMENT;
+                continue;
+            }
+
+            if (c0 == '/' && c1 == '*') { // start multiline comment
+                m_sBuffer += c0;
+                m_sBuffer += c1;
+                cur.next(); // skip c1
+                m_nStatus = WsjcppParserCppLayer0Status::START_PARSE_MULTILINE_COMMENT;
+                continue;
             }
 
             if (c0 == '\\' && c1 == '\n') { // continue line
@@ -146,6 +169,31 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
             }
 
             throwErrorUnknownSymbol(c0, "first char");
+        }
+
+        // oneline comment
+        if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_ONELINE_COMMENT) {
+            if (c0 == '\n') {
+                flushBuffer();
+                m_nStatus = WsjcppParserCppLayer0Status::NONE;
+            } else {
+                m_sBuffer += c0;
+            }
+            continue;
+        }
+
+        // multiline comment
+        if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_MULTILINE_COMMENT) {
+            if (c0 == '*' && c1 == '/') {
+                m_sBuffer += c0;
+                m_sBuffer += c1;
+                cur.next(); // skip c1
+                flushBuffer();
+                m_nStatus = WsjcppParserCppLayer0Status::NONE;
+            } else {
+                m_sBuffer += c0;
+            }
+            continue;
         }
 
         if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_STRING) {
@@ -204,53 +252,6 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
 
 const std::vector<std::string> &WsjcppParserCppLayer0::getTokens() {
     return m_vTokens;
-}
-
-std::string WsjcppParserCppLayer0::removeComments(const std::string &sContent) {
-    int nLen = sContent.length();
-    std::string sNewContent = "";
-    bool bMultilineComment = false;
-    bool bOnelineComment = false;
-    for (int i = 0; i < nLen; i++) {
-        char c0 = sContent[i];
-        char c1 = 0x0;
-        if (i+1 < nLen) {
-            c1 = sContent[i+1];
-        }
-
-        if (bMultilineComment && c0 == '*' && c1 == '/') { // end multiline comment
-            bMultilineComment = false;
-            i++;
-            continue;
-        }
-        if (!bMultilineComment && c0 == '/' && c1 == '*') { // start multiline comment
-            bMultilineComment = true;
-            i++;
-            continue;
-        }
-
-        if (bMultilineComment) {
-            continue;
-        }
-
-        if (bOnelineComment && c0 == '\n') { // end oneline comment
-            bOnelineComment = false;
-            continue;
-        }
-
-        if (!bOnelineComment && c0 == '/' && c1 == '/') { // start oneline comment
-            bOnelineComment = true;
-            i++;
-            continue;
-        }
-
-        if (bOnelineComment) {
-            continue;
-        }
-
-        sNewContent += sContent[i];
-    }
-    return sNewContent;
 }
 
 void WsjcppParserCppLayer0::flushBuffer() {

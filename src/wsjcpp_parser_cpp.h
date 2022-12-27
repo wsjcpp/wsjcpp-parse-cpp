@@ -5,10 +5,7 @@
 #include <vector>
 #include <map>
 
-enum class WsjcppParserCppStatus {
-    NONE = 1,
-    START_PARSE_STRING = 2,
-};
+
 
 class WsjcppParserCppCursor {
     public:
@@ -29,27 +26,39 @@ class WsjcppParserCppCursor {
         char m_c1;
         int m_nCurrentPos;
         int m_nLength;
+};
 
+enum class WsjcppParserCppLayer0Status {
+    NONE = 1,
+    START_PARSE_STRING = 2,
+};
+
+class WsjcppParserCppLayer0 {
+    public:
+        WsjcppParserCppLayer0();
+        bool parseByTokens(const std::string &sContent);
+        const std::vector<std::string> &getTokens();
+        
+
+    private:
+        std::string removeComments(const std::string &sContent);
+        void flushBuffer();
+        void throwErrorUnknownSymbol(char c0, const std::string &sMessage);
+        
+        std::string TAG;
+        std::string m_sBuffer;
+        WsjcppParserCppLayer0Status m_nStatus;
+        std::vector<std::string> m_vTokens;
 };
 
 class WsjcppParserCpp {
     public:
         WsjcppParserCpp();
 
-        bool parseFile(const std::string &sFilepath);
-        std::string removeComments(const std::string &sContent);
-        void parseByWords(const std::string &sContent);
-        const std::vector<std::string> &getWords();
-
+        bool parse(const std::string &sFilepath);
+        
     private:
-
-        void flushBuffer();
-        void throwErrorUnknownSymbol(char c0, const std::string &sMessage);
-
         std::string TAG;
-        std::string m_sBuffer;
-        std::vector<std::string> m_vWords;
-        WsjcppParserCppStatus m_nStatus;
 };
 
 #endif // WSJCPP_PARSER_CPP_H

@@ -45,9 +45,9 @@ void UnitTestParseFunction::executeTest() {
         "}", ";",
     };
 
-    WsjcppParserCpp parser;
-    parser.parseByWords(sTestContent);
-    const std::vector<std::string> &vWords = parser.getWords();
+    WsjcppParserCppLayer0 parser;
+    parser.parseByTokens(sTestContent);
+    const std::vector<std::string> &vWords = parser.getTokens();
     int nMin = std::min(vWords.size(), vExpectedWords.size());
 
     // for (int i = 0; i < vWords.size(); i++) {

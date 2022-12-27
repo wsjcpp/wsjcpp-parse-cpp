@@ -79,28 +79,134 @@ bool WsjcppParserCppCursor::isAllowedPair() {
     ;
 }
 
-
 // ---------------------------------------------------------------------
-// WsjcppParserCpp
+// WsjcppParserCppLayer0
 
-WsjcppParserCpp::WsjcppParserCpp() {
-    TAG = "WsjcppParserCpp";
-    m_nStatus = WsjcppParserCppStatus::NONE;
+WsjcppParserCppLayer0::WsjcppParserCppLayer0() {
+    TAG = "WsjcppParserCppLayer0";
+    m_nStatus = WsjcppParserCppLayer0Status::NONE;
 }
 
-bool WsjcppParserCpp::parseFile(const std::string &sFilepath) {
-    std::string sContent;
-    if (!WsjcppCore::readTextFile(sFilepath, sContent)) {
-        return false;
+bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent) {
+    std::string sContent2 = removeComments(sContent);
+    m_vTokens.clear();
+    m_nStatus = WsjcppParserCppLayer0Status::NONE;
+    
+    WsjcppParserCppCursor cur(sContent2);
+
+    int nLen = sContent2.length();
+    m_sBuffer = "";
+    while (cur.next()) {
+        char c0 = cur.getC0();
+        char c1 = cur.getC1();
+        bool isAlphabet = (c0 >= 'a' && c0 <= 'z') || (c0 >= 'A' && c0 <= 'Z');
+        if (m_sBuffer.length() == 0) {
+            if (cur.isSkipEmptyChars()) {
+                continue; // skip empty lines
+            }
+
+            if (c0 == '\\' && c1 == '\n') { // continue line
+                cur.next(); // skip c1
+                flushBuffer();
+                continue;
+            }
+
+            if (cur.isAllowedPair()) {
+                m_sBuffer += c0;
+                m_sBuffer += c1;
+                flushBuffer();
+                cur.next(); // skip c1
+                continue;
+            }
+
+            if (c0 == '(') {
+                std::cout << "HERE" << std::endl;
+            }
+
+            if (cur.isSeparatedChar()) {
+                m_sBuffer += c0;
+                flushBuffer();
+                continue;
+            }
+
+            if (isAlphabet || c0 == '_' ) { // start token
+                m_sBuffer += c0;
+                continue;
+            }
+
+            if (cur.isNumeric()) { // start number, TODO state
+                m_sBuffer += c0;
+                continue;
+            }
+
+            if (m_nStatus == WsjcppParserCppLayer0Status::NONE && c0 == '"') {
+                m_nStatus = WsjcppParserCppLayer0Status::START_PARSE_STRING;
+                m_sBuffer += c0;
+                continue;
+            }
+
+            throwErrorUnknownSymbol(c0, "first char");
+        }
+
+        if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_STRING) {
+            if (c0 == '\\') { // string escaping char
+                m_sBuffer += c0;
+                cur.next();
+                m_sBuffer += cur.getC0();
+                continue;
+            }
+
+            if (c0 == '"') { // end string
+                m_sBuffer += c0;
+                flushBuffer();
+                m_nStatus = WsjcppParserCppLayer0Status::NONE;
+                continue;
+            }
+
+            m_sBuffer += c0;
+            continue;
+        }
+
+        if (cur.isSkipEmptyChars()) {
+            flushBuffer();
+            continue;
+        }
+
+        if (cur.isAllowedPair()) {
+            flushBuffer();
+            m_sBuffer += c0;
+            m_sBuffer += c1;
+            flushBuffer();
+            cur.next(); // skip c1
+            continue;
+        }
+
+        if (cur.isSeparatedChar()) {
+            flushBuffer();
+            m_sBuffer += c0;
+            flushBuffer();
+            continue;
+        }
+
+        if (isAlphabet || cur.isNumeric() || c0 == '_' ) {
+            m_sBuffer += c0;
+            continue;
+        }
+
+        throwErrorUnknownSymbol(c0, "non empty buffer");
     }
 
-    sContent = removeComments(sContent);
-    m_vWords.clear();
-    parseByWords(sContent);
+    if (m_sBuffer.length() > 0) {
+        m_vTokens.push_back(m_sBuffer);
+    }
     return true;
 }
 
-std::string WsjcppParserCpp::removeComments(const std::string &sContent) {
+const std::vector<std::string> &WsjcppParserCppLayer0::getTokens() {
+    return m_vTokens;
+}
+
+std::string WsjcppParserCppLayer0::removeComments(const std::string &sContent) {
     int nLen = sContent.length();
     std::string sNewContent = "";
     bool bMultilineComment = false;
@@ -147,137 +253,43 @@ std::string WsjcppParserCpp::removeComments(const std::string &sContent) {
     return sNewContent;
 }
 
-void WsjcppParserCpp::parseByWords(const std::string &sContent) {
-    WsjcppParserCppCursor cur(sContent);
-
-    int nLen = sContent.length();
-    m_sBuffer = "";
-    while (cur.next()) {
-        char c0 = cur.getC0();
-        char c1 = cur.getC1();
-        bool isAlphabet = (c0 >= 'a' && c0 <= 'z') || (c0 >= 'A' && c0 <= 'Z');
-        if (m_sBuffer.length() == 0) {
-            if (cur.isSkipEmptyChars()) {
-                continue; // skip empty lines
-            }
-
-            if (c0 == '\\' && c1 == '\n') { // continue line
-                cur.next(); // skip c1
-                flushBuffer();
-                continue;
-            }
-
-            if (cur.isAllowedPair()) {
-                m_sBuffer += c0;
-                m_sBuffer += c1;
-                flushBuffer();
-                cur.next(); // skip c1
-                continue;
-            }
-
-            if (c0 == '(') {
-                std::cout << "HERE" << std::endl;
-            }
-
-            if (cur.isSeparatedChar()) {
-                m_sBuffer += c0;
-                flushBuffer();
-                continue;
-            }
-
-            if (isAlphabet || c0 == '_' ) { // start token
-                m_sBuffer += c0;
-                continue;
-            }
-
-            if (cur.isNumeric()) { // start number, TODO state
-                m_sBuffer += c0;
-                continue;
-            }
-
-            if (m_nStatus == WsjcppParserCppStatus::NONE && c0 == '"') {
-                m_nStatus = WsjcppParserCppStatus::START_PARSE_STRING;
-                m_sBuffer += c0;
-                continue;
-            }
-
-            throwErrorUnknownSymbol(c0, "first char");
-        }
-
-        if (m_nStatus == WsjcppParserCppStatus::START_PARSE_STRING) {
-            if (c0 == '\\') { // string escaping char
-                m_sBuffer += c0;
-                cur.next();
-                m_sBuffer += cur.getC0();
-                continue;
-            }
-
-            if (c0 == '"') { // end string
-                m_sBuffer += c0;
-                flushBuffer();
-                m_nStatus = WsjcppParserCppStatus::NONE;
-                continue;
-            }
-
-            m_sBuffer += c0;
-            continue;
-        }
-
-        if (cur.isSkipEmptyChars()) {
-            flushBuffer();
-            continue;
-        }
-
-        if (cur.isAllowedPair()) {
-            flushBuffer();
-            m_sBuffer += c0;
-            m_sBuffer += c1;
-            flushBuffer();
-            cur.next(); // skip c1
-            continue;
-        }
-
-        if (cur.isSeparatedChar()) {
-            flushBuffer();
-            m_sBuffer += c0;
-            flushBuffer();
-            continue;
-        }
-
-        if (isAlphabet || cur.isNumeric() || c0 == '_' ) {
-            m_sBuffer += c0;
-            continue;
-        }
-
-        throwErrorUnknownSymbol(c0, "non empty buffer");
-    }
-
+void WsjcppParserCppLayer0::flushBuffer() {
     if (m_sBuffer.length() > 0) {
-        m_vWords.push_back(m_sBuffer);
-    }
-}
-
-const std::vector<std::string> &WsjcppParserCpp::getWords() {
-    return m_vWords;
-}
-
-void WsjcppParserCpp::flushBuffer() {
-    if (m_sBuffer.length() > 0) {
-        m_vWords.push_back(m_sBuffer);
+        m_vTokens.push_back(m_sBuffer);
         m_sBuffer = "";
     }
 }
 
-void WsjcppParserCpp::throwErrorUnknownSymbol(char c0, const std::string &sMessage) {
+void WsjcppParserCppLayer0::throwErrorUnknownSymbol(char c0, const std::string &sMessage) {
 
     std::string sError = "[" + sMessage + "] Unknown simbol '";
     sError += c0;
     sError += "'; Current buffer: '" + m_sBuffer + "';\n    Latest words:\n";
     std::vector<std::string> vLatest;
-    int nMin = std::max(int(m_vWords.size() - 10), 0);
-    int nMax = m_vWords.size() - 1;
+    int nMin = std::max(int(m_vTokens.size() - 10), 0);
+    int nMax = m_vTokens.size() - 1;
     for (int i = nMin; i < nMax; i++) {
-        sError += std::to_string(i) + ": '" + m_vWords[i] + "'\n";
+        sError += std::to_string(i) + ": '" + m_vTokens[i] + "'\n";
     }
     WsjcppLog::throw_err(TAG, sError);
+}
+
+
+// ---------------------------------------------------------------------
+// WsjcppParserCpp
+
+WsjcppParserCpp::WsjcppParserCpp() {
+    TAG = "WsjcppParserCpp";
+}
+
+bool WsjcppParserCpp::parse(const std::string &sFilepath) {
+    std::string sContent;
+    if (!WsjcppCore::readTextFile(sFilepath, sContent)) {
+        return false;
+    }
+    WsjcppParserCppLayer0 layer0;
+    layer0.parseByTokens(sContent);
+    
+    // parseByWords(sContent);
+    return true;
 }

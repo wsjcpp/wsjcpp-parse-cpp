@@ -30,15 +30,15 @@ int main(int argc, const char* argv[]) {
             return -1;
         }
 
-        if (!parser.parseByTokens(sContent)) {
+        if (!parser.parseByTokens(sContent, sFilepath)) {
             WsjcppLog::err(TAG, "Could not parse file " + sFilepath);
             return -1;
         }
-        const std::vector<std::string> &vWords = parser.getTokens();
+        const std::vector<WsjcppParserCppLayer0Token> &vTokens = parser.getTokens();
         std::cout << "Parsed file: " << vFiles[i] << std::endl
-             << "   -> Found words: " << vWords.size() << std::endl;
-        // for (int i = 0; i < vWords.size(); ++i) {
-        //     std::cout << vWords[i] << std::endl;
+             << "   -> Found words: " << vTokens.size() << std::endl;
+        // for (int i = 0; i < vTokens.size(); ++i) {
+        //     std::cout << vTokens[i].getValue() << std::endl;
         // }
     }
 

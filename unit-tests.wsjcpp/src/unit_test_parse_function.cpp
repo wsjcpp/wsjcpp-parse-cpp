@@ -52,24 +52,18 @@ void UnitTestParseFunction::executeTest() {
 
     WsjcppParserCppLayer0 parser;
     parser.parseByTokens(sTestContent, "UnitTestParseFunction.cpp");
-    const std::vector<std::string> &vWords = parser.getTokens();
-    int nMin = std::min(vWords.size(), vExpectedWords.size());
-
-    // for (int i = 0; i < vWords.size(); i++) {
-    //     std::string sRes = "OK";
-    //     if (vWords[i] != vExpectedWords[i]) {
-    //         sRes = "ERR";
-    //     }
-    //     std::cout << i << ": '" << vWords[i] << "'  '" << vExpectedWords[i] << "' " << sRes << std::endl;
-    // }
+    const std::vector<WsjcppParserCppLayer0Token> &vTokens = parser.getTokens();
+    int nMin = std::min(vTokens.size(), vExpectedWords.size());
 
     for (int i = 0; i < nMin; i++) {
-        if (!compare("found words", vWords[i], vExpectedWords[i])) {
-            std::cout << i << ": expected '" << vExpectedWords[i] << "', but got '" << vWords[i] << "' " << std::endl;
+        std::string sToken = vTokens[i].getValue();
+
+        if (!compare("found words", sToken, vExpectedWords[i])) {
+            std::cout << i << ": expected '" << vExpectedWords[i] << "', but got '" << sToken << "' " << std::endl;
             break;
         }
     }
-    compare("found words", vWords.size(), vExpectedWords.size());
+    compare("found words", vTokens.size(), vExpectedWords.size());
 }
 
 // ---------------------------------------------------------------------

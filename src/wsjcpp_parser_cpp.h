@@ -35,9 +35,27 @@ class WsjcppParserCppCursor {
 
 enum class WsjcppParserCppLayer0Status {
     NONE = 1,
-    START_PARSE_STRING = 2,
-    START_PARSE_ONELINE_COMMENT = 3,
-    START_PARSE_MULTILINE_COMMENT = 4,
+    START_PARSE_STRING_DOUBLE_QUOTES = 20,
+    START_PARSE_STRING_SINGLE_QUOTES = 21,
+    START_PARSE_ONELINE_COMMENT = 30,
+    START_PARSE_MULTILINE_COMMENT = 40,
+};
+
+class WsjcppParserCppLayer0Buffer {
+    public:
+        WsjcppParserCppLayer0Buffer();
+        void reset();
+        void append(WsjcppParserCppCursor *pCur);
+
+        bool isEmpty();
+        int getLineNumber();
+        int getPositionInLine();
+        const std::string &getValue() const;
+    private:
+        std::string m_sBuffer;
+        int m_nLength;
+        int m_nLineNumber;
+        int m_nPositionInLine;
 };
 
 class WsjcppParserCppLayer0Token {
@@ -48,7 +66,7 @@ class WsjcppParserCppLayer0Token {
             int nPositionInLine,
             const std::string &sFilepath
         );
-        const std::string &getValue();
+        const std::string &getValue() const;
     private:
         std::string m_sToken;
         int m_nLine;
@@ -60,20 +78,18 @@ class WsjcppParserCppLayer0 {
     public:
         WsjcppParserCppLayer0();
         bool parseByTokens(const std::string &sContent, const std::string &sContentName);
-        const std::vector<std::string> &getTokens();
+        const std::vector<WsjcppParserCppLayer0Token> &getTokens();
         
 
     private:
         void flushBuffer();
-        void flushBuffer(char c0);
-        void flushBuffer(char c0, char c1);
-        void throwErrorUnknownSymbol(char c0, const std::string &sMessage);
+        void throwErrorUnknownSymbol(const std::string &sMessage);
         
         std::string TAG;
-        std::string m_sBuffer;
+        WsjcppParserCppLayer0Buffer m_buffer;
         WsjcppParserCppCursor *m_pCur;
         WsjcppParserCppLayer0Status m_nStatus;
-        std::vector<std::string> m_vTokens;
+        std::vector<WsjcppParserCppLayer0Token> m_vTokens;
         std::string m_sContentName;
 };
 

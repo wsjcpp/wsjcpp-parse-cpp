@@ -112,8 +112,9 @@ int WsjcppParserCppCursor::getPositionInLine() {
 // ---------------------------------------------------------------------
 // WsjcppParserCppLayer0Buffer
 
-WsjcppParserCppLayer0Buffer::WsjcppParserCppLayer0Buffer() {
+WsjcppParserCppLayer0Buffer::WsjcppParserCppLayer0Buffer(const std::string &sFilepath) {
     reset();
+    m_sFilepath = sFilepath;
 }
 
 void WsjcppParserCppLayer0Buffer::reset() {
@@ -132,35 +133,36 @@ void WsjcppParserCppLayer0Buffer::append(WsjcppParserCppCursor *pCur) {
     m_nLength++;
 }
 
-bool WsjcppParserCppLayer0Buffer::isEmpty() {
+const std::string &WsjcppParserCppLayer0Buffer::getValue() const {
+    return m_sBuffer;
+}
+
+bool WsjcppParserCppLayer0Buffer::isEmpty() const {
     return m_nLength == 0;
 }
 
-int WsjcppParserCppLayer0Buffer::getLineNumber() {
+int WsjcppParserCppLayer0Buffer::getLineNumber() const {
     return m_nLineNumber;
 };
 
-int WsjcppParserCppLayer0Buffer::getPositionInLine() {
+int WsjcppParserCppLayer0Buffer::getPositionInLine() const {
     return m_nPositionInLine;
 };
 
-const std::string &WsjcppParserCppLayer0Buffer::getValue() const {
-    return m_sBuffer;
+const std::string &WsjcppParserCppLayer0Buffer::getFilepath() const {
+    return m_sFilepath;
 }
 
 // ---------------------------------------------------------------------
 // WsjcppParserCppLayer0Token
 
 WsjcppParserCppLayer0Token::WsjcppParserCppLayer0Token(
-    const std::string &sToken,
-    int nLine,
-    int nPositionInLine,
-    const std::string &sFilepath
+    const WsjcppParserCppLayer0Buffer *pToken
 ) {
-    m_sToken = sToken;
-    m_nLine = nLine;
-    m_nPositionInLine = nPositionInLine;
-    m_sFilepath = sFilepath;
+    m_sToken = pToken->getValue();
+    m_nLine = pToken->getLineNumber();
+    m_nPositionInLine = pToken->getPositionInLine();
+    m_sFilepath = pToken->getFilepath();
 }
 
 const std::string &WsjcppParserCppLayer0Token::getValue() const {
@@ -173,12 +175,14 @@ const std::string &WsjcppParserCppLayer0Token::getValue() const {
 WsjcppParserCppLayer0::WsjcppParserCppLayer0() {
     TAG = "WsjcppParserCppLayer0";
     m_nStatus = WsjcppParserCppLayer0Status::NONE;
+    m_pBuffer = nullptr;
 }
 
 bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent, const std::string &sContentName) {
     m_sContentName = sContentName;
     m_vTokens.clear();
-    m_buffer.reset();
+    m_pBuffer = new WsjcppParserCppLayer0Buffer(sContentName);
+    m_pBuffer->reset();
     m_nStatus = WsjcppParserCppLayer0Status::NONE;
     m_pCur = new WsjcppParserCppCursor(sContent);
 
@@ -186,21 +190,21 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent, const std
         char c0 = m_pCur->getC0();
         char c1 = m_pCur->getC1();
         bool isAlphabet = (c0 >= 'a' && c0 <= 'z') || (c0 >= 'A' && c0 <= 'Z');
-        if (m_buffer.isEmpty()) {
+        if (m_pBuffer->isEmpty()) {
             if (m_pCur->isSkipEmptyChars()) {
                 continue; // skip empty lines
             }
 
             if (c0 == '/' && c1 == '/') { // start oneline comment
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 m_nStatus = WsjcppParserCppLayer0Status::START_PARSE_ONELINE_COMMENT;
                 continue;
             }
 
             if (c0 == '/' && c1 == '*') { // start multiline comment
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 m_pCur->next(); // skip c1
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 m_nStatus = WsjcppParserCppLayer0Status::START_PARSE_MULTILINE_COMMENT;
                 continue;
             }
@@ -212,38 +216,38 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent, const std
             }
 
             if (m_pCur->isAllowedPair()) {
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 m_pCur->next(); // skip c1
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 flushBuffer();
                 continue;
             }
 
             if (m_pCur->isSeparatedChar()) {
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 flushBuffer();
                 continue;
             }
 
             if (isAlphabet || c0 == '_' ) { // start token
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 continue;
             }
 
             if (m_pCur->isNumeric()) { // start number, TODO state
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 continue;
             }
 
             if (m_nStatus == WsjcppParserCppLayer0Status::NONE && c0 == '"') {
                 m_nStatus = WsjcppParserCppLayer0Status::START_PARSE_STRING_DOUBLE_QUOTES;
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 continue;
             }
 
             if (m_nStatus == WsjcppParserCppLayer0Status::NONE && c0 == '\'') {
                 m_nStatus = WsjcppParserCppLayer0Status::START_PARSE_STRING_SINGLE_QUOTES;
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 continue;
             }
 
@@ -256,7 +260,7 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent, const std
                 flushBuffer();
                 m_nStatus = WsjcppParserCppLayer0Status::NONE;
             } else {
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
             }
             continue;
         }
@@ -264,52 +268,52 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent, const std
         // multiline comment
         if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_MULTILINE_COMMENT) {
             if (c0 == '*' && c1 == '/') {
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 m_pCur->next(); // skip c1
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 flushBuffer();
                 m_nStatus = WsjcppParserCppLayer0Status::NONE;
             } else {
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
             }
             continue;
         }
 
         if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_STRING_DOUBLE_QUOTES) {
             if (c0 == '\\') { // string escaping char
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 m_pCur->next();
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 continue;
             }
 
             if (c0 == '"') { // end string
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 flushBuffer();
                 m_nStatus = WsjcppParserCppLayer0Status::NONE;
                 continue;
             }
 
-            m_buffer.append(m_pCur);
+            m_pBuffer->append(m_pCur);
             continue;
         }
 
          if (m_nStatus == WsjcppParserCppLayer0Status::START_PARSE_STRING_SINGLE_QUOTES) {
             if (c0 == '\\') { // string escaping char
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 m_pCur->next();
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 continue;
             }
 
             if (c0 == '\'') { // end string
-                m_buffer.append(m_pCur);
+                m_pBuffer->append(m_pCur);
                 flushBuffer();
                 m_nStatus = WsjcppParserCppLayer0Status::NONE;
                 continue;
             }
 
-            m_buffer.append(m_pCur);
+            m_pBuffer->append(m_pCur);
             continue;
         }
 
@@ -320,22 +324,22 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent, const std
 
         if (m_pCur->isAllowedPair()) {
             flushBuffer();
-            m_buffer.append(m_pCur);
+            m_pBuffer->append(m_pCur);
             m_pCur->next(); // skip c1
-            m_buffer.append(m_pCur);
+            m_pBuffer->append(m_pCur);
             flushBuffer();
             continue;
         }
 
         if (m_pCur->isSeparatedChar()) {
             flushBuffer();
-            m_buffer.append(m_pCur);
+            m_pBuffer->append(m_pCur);
             flushBuffer();
             continue;
         }
 
         if (isAlphabet || m_pCur->isNumeric() || c0 == '_' ) {
-            m_buffer.append(m_pCur);
+            m_pBuffer->append(m_pCur);
             continue;
         }
 
@@ -345,6 +349,8 @@ bool WsjcppParserCppLayer0::parseByTokens(const std::string &sContent, const std
     flushBuffer();
     delete m_pCur;
     m_pCur = nullptr;
+    delete m_pBuffer;
+    m_pBuffer = nullptr;
     return true;
 }
 
@@ -353,14 +359,9 @@ const std::vector<WsjcppParserCppLayer0Token> &WsjcppParserCppLayer0::getTokens(
 }
 
 void WsjcppParserCppLayer0::flushBuffer() {
-    if (!m_buffer.isEmpty()) {
-        m_vTokens.push_back(WsjcppParserCppLayer0Token(
-            m_buffer.getValue(),
-            m_buffer.getLineNumber(),
-            m_buffer.getPositionInLine(),
-            m_sContentName
-        ));
-        m_buffer.reset();
+    if (!m_pBuffer->isEmpty()) {
+        m_vTokens.push_back(WsjcppParserCppLayer0Token(m_pBuffer));
+        m_pBuffer->reset();
     }
 }
 
@@ -369,7 +370,7 @@ void WsjcppParserCppLayer0::throwErrorUnknownSymbol(const std::string &sMessage)
     std::string sError = "[" + sMessage + "] Unknown simbol (" + std::to_string(m_pCur->getC0()) + ") '";
     sError += m_pCur->getC0();
     sError += "'; File: " + m_sContentName + ":" + std::to_string(m_pCur->getLineNumber()) + ":" + std::to_string(m_pCur->getPositionInLine());
-    sError += "; Current buffer: '" + m_buffer.getValue() + "';\n    Latest words:\n";
+    sError += "; Current buffer: '" + m_pBuffer->getValue() + "';\n    Latest words:\n";
     std::vector<std::string> vLatest;
     int nMin = std::max(int(m_vTokens.size() - 10), 0);
     int nMax = m_vTokens.size() - 1;

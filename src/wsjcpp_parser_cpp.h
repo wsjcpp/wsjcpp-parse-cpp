@@ -95,6 +95,37 @@ class WsjcppParserCppLayer0 {
         std::string m_sContentName;
 };
 
+class WsjcppParserCppLayer1Token {
+    public:
+        WsjcppParserCppLayer1Token();
+        int getLineNumber() const;
+        int getPositionInLine() const;
+        const std::string &getFilepath() const;
+    private:
+        int m_nLineNumber;
+        int m_nPositionInLine;
+        std::string m_sFilepath;
+};
+
+class WsjcppParserCppLayer1 {
+    public:
+        WsjcppParserCppLayer1();
+        bool parseByTokens(std::vector<WsjcppParserCppLayer0Token> m_vTokens, const std::string &sContentName);
+        const std::vector<WsjcppParserCppLayer1Token> &getTokens();
+        
+
+    private:
+        // void flushBuffer();
+        // void throwErrorUnknownSymbol(const std::string &sMessage);
+        
+        std::string TAG;
+        // WsjcppParserCppLayer0Buffer *m_pBuffer;
+        // WsjcppParserCppCursor *m_pCur;
+        // WsjcppParserCppLayer0Status m_nStatus;
+        std::vector<WsjcppParserCppLayer1Token> m_vTokens;
+        // std::string m_sContentName;
+};
+
 class WsjcppParserCpp {
     public:
         WsjcppParserCpp();

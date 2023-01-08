@@ -380,6 +380,42 @@ void WsjcppParserCppLayer0::throwErrorUnknownSymbol(const std::string &sMessage)
     WsjcppLog::throw_err(TAG, sError);
 }
 
+// ---------------------------------------------------------------------
+// WsjcppParserCppLayer1Token
+
+WsjcppParserCppLayer1Token::WsjcppParserCppLayer1Token() {
+
+}
+
+int WsjcppParserCppLayer1Token::getLineNumber() const {
+    return m_nLineNumber;
+}
+
+int WsjcppParserCppLayer1Token::getPositionInLine() const {
+    return m_nPositionInLine;
+}
+
+const std::string &WsjcppParserCppLayer1Token::getFilepath() const {
+    return m_sFilepath;
+}
+
+// ---------------------------------------------------------------------
+// WsjcppParserCppLayer1
+
+WsjcppParserCppLayer1::WsjcppParserCppLayer1() {
+    TAG = "WsjcppParserCppLayer1";
+}
+        
+bool WsjcppParserCppLayer1::parseByTokens(std::vector<WsjcppParserCppLayer0Token> m_vTokens, const std::string &sContentName) {
+    // TODO
+    return false;
+}
+
+const std::vector<WsjcppParserCppLayer1Token> &WsjcppParserCppLayer1::getTokens() {
+    return m_vTokens;
+}
+        
+
 
 // ---------------------------------------------------------------------
 // WsjcppParserCpp
@@ -399,3 +435,5 @@ bool WsjcppParserCpp::parse(const std::string &sFilepath) {
     // parseByWords(sContent);
     return true;
 }
+
+

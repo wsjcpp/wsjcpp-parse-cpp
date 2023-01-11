@@ -110,7 +110,7 @@ class WsjcppParserCppLayer1Token {
 class WsjcppParserCppLayer1 {
     public:
         WsjcppParserCppLayer1();
-        bool parseByTokens(std::vector<WsjcppParserCppLayer0Token> m_vTokens, const std::string &sContentName);
+        bool parseByTokens(const std::vector<WsjcppParserCppLayer0Token> &m_vTokens, const std::string &sContentName);
         const std::vector<WsjcppParserCppLayer1Token> &getTokens();
         
 

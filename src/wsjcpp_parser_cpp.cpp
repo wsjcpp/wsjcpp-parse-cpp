@@ -406,7 +406,7 @@ WsjcppParserCppLayer1::WsjcppParserCppLayer1() {
     TAG = "WsjcppParserCppLayer1";
 }
         
-bool WsjcppParserCppLayer1::parseByTokens(std::vector<WsjcppParserCppLayer0Token> m_vTokens, const std::string &sContentName) {
+bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer0Token> &m_vTokens, const std::string &sContentName) {
     // TODO
     return false;
 }

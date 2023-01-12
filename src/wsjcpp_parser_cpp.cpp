@@ -160,13 +160,21 @@ WsjcppParserCppLayer0Token::WsjcppParserCppLayer0Token(
     const WsjcppParserCppLayer0Buffer *pToken
 ) {
     m_sToken = pToken->getValue();
-    m_nLine = pToken->getLineNumber();
+    m_nLineNumber = pToken->getLineNumber();
     m_nPositionInLine = pToken->getPositionInLine();
     m_sFilepath = pToken->getFilepath();
 }
 
 const std::string &WsjcppParserCppLayer0Token::getValue() const {
     return m_sToken;
+}
+
+int WsjcppParserCppLayer0Token::getLineNumber() const {
+    return m_nLineNumber;
+}
+
+int WsjcppParserCppLayer0Token::getPositionInLine() const {
+    return m_nPositionInLine;
 }
 
 // ---------------------------------------------------------------------
@@ -381,10 +389,57 @@ void WsjcppParserCppLayer0::throwErrorUnknownSymbol(const std::string &sMessage)
 }
 
 // ---------------------------------------------------------------------
+// WsjcppParserCppLayer1Buffer
+
+WsjcppParserCppLayer1Buffer::WsjcppParserCppLayer1Buffer(const std::string &sFilepath) {
+    reset();
+    m_sFilepath = sFilepath;
+}
+
+void WsjcppParserCppLayer1Buffer::reset() {
+    m_sBuffer = "";
+    m_nLineNumber = -1;
+    m_nPositionInLine = -1;
+    m_vBuffer.clear();
+}
+
+void WsjcppParserCppLayer1Buffer::append(WsjcppParserCppLayer0Token token) {
+    if (m_vBuffer.size() == 0) {
+        m_sBuffer = token.getValue();
+        m_nLineNumber = token.getLineNumber();
+        m_nPositionInLine = token.getPositionInLine();
+        m_vBuffer.push_back(token);
+        return;
+    }
+    m_vBuffer.push_back(token);
+    m_sBuffer += token.getValue();
+}
+
+bool WsjcppParserCppLayer1Buffer::isEmpty() const {
+    return m_vBuffer.size() == 0;
+}
+
+const std::string &WsjcppParserCppLayer1Buffer::getValue() const {
+    return m_sBuffer;
+}
+
+int WsjcppParserCppLayer1Buffer::getLineNumber() const {
+    return m_nLineNumber;
+}
+
+int WsjcppParserCppLayer1Buffer::getPositionInLine() const {
+    return m_nPositionInLine;
+}
+
+const std::string &WsjcppParserCppLayer1Buffer::getFilepath() const {
+    return m_sFilepath;
+}
+
+// ---------------------------------------------------------------------
 // WsjcppParserCppLayer1Token
 
-WsjcppParserCppLayer1Token::WsjcppParserCppLayer1Token() {
-
+WsjcppParserCppLayer1Token::WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType nType) {
+    m_nType = nType;
 }
 
 int WsjcppParserCppLayer1Token::getLineNumber() const {
@@ -404,9 +459,29 @@ const std::string &WsjcppParserCppLayer1Token::getFilepath() const {
 
 WsjcppParserCppLayer1::WsjcppParserCppLayer1() {
     TAG = "WsjcppParserCppLayer1";
+    m_pBuffer = nullptr;
 }
         
 bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer0Token> &m_vTokens, const std::string &sContentName) {
+    int i = 0;
+    int nLength = m_vTokens.size();
+    m_pBuffer = new WsjcppParserCppLayer1Buffer(sContentName);
+
+    while (i < nLength) {
+        WsjcppParserCppLayer0Token token0 = m_vTokens[i];
+        std::string sToken0 = token0.getValue();
+        std::string sToken1 = "";
+        if (i+1 < nLength) {
+            sToken1 = m_vTokens[i+1].getValue();
+        }
+
+        if (sToken0 == "#" && sToken1 == "include") {
+            // TODO include instruction
+            i++;
+        }
+
+        i++;
+    }
     // TODO
     return false;
 }

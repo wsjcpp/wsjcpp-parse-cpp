@@ -71,7 +71,7 @@ class WsjcppParserCppLayer0Token {
         const std::string &getFilepath() const;
     private:
         std::string m_sToken;
-        int m_nLine;
+        int m_nLineNumber;
         int m_nPositionInLine;
         std::string m_sFilepath;
 };
@@ -95,13 +95,40 @@ class WsjcppParserCppLayer0 {
         std::string m_sContentName;
 };
 
-class WsjcppParserCppLayer1Token {
+enum class WsjcppParserCppLayer1TokenType {
+    NONE = 1,
+    INCLUDE = 20,
+};
+
+class WsjcppParserCppLayer1Buffer {
     public:
-        WsjcppParserCppLayer1Token();
+        WsjcppParserCppLayer1Buffer(const std::string &sFilepath);
+        void reset();
+        void append(WsjcppParserCppLayer0Token token);
+
+        bool isEmpty() const;
+        const std::string &getValue() const;
         int getLineNumber() const;
         int getPositionInLine() const;
         const std::string &getFilepath() const;
     private:
+        std::string m_sBuffer;
+        int m_nLineNumber;
+        int m_nPositionInLine;
+        std::string m_sFilepath;
+        std::vector<WsjcppParserCppLayer0Token> m_vBuffer;
+};
+
+class WsjcppParserCppLayer1Token {
+    public:
+        WsjcppParserCppLayer1Token(
+            WsjcppParserCppLayer1TokenType nType
+        );
+        int getLineNumber() const;
+        int getPositionInLine() const;
+        const std::string &getFilepath() const;
+    private:
+        WsjcppParserCppLayer1TokenType m_nType;
         int m_nLineNumber;
         int m_nPositionInLine;
         std::string m_sFilepath;
@@ -119,7 +146,7 @@ class WsjcppParserCppLayer1 {
         // void throwErrorUnknownSymbol(const std::string &sMessage);
         
         std::string TAG;
-        // WsjcppParserCppLayer0Buffer *m_pBuffer;
+        WsjcppParserCppLayer1Buffer *m_pBuffer;
         // WsjcppParserCppCursor *m_pCur;
         // WsjcppParserCppLayer0Status m_nStatus;
         std::vector<WsjcppParserCppLayer1Token> m_vTokens;

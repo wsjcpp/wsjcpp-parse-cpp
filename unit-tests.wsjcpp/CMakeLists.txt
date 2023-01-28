@@ -34,8 +34,8 @@ list (APPEND WSJCPP_SOURCES "../src/wsjcpp_parser_cpp.h")
 
 # unit-tests
 list (APPEND WSJCPP_INCLUDE_DIRS "src")
-list (APPEND WSJCPP_SOURCES "../unit-tests.wsjcpp/src/unit_test_parse_function.cpp")
 list (APPEND WSJCPP_SOURCES "../unit-tests.wsjcpp/src/unit_test_layer1.cpp")
+list (APPEND WSJCPP_SOURCES "../unit-tests.wsjcpp/src/unit_test_layer0.cpp")
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.user-custom.txt)
 

@@ -4,33 +4,32 @@
 #include "wsjcpp_parser_cpp.h"
 
 // ---------------------------------------------------------------------
-// UnitTestParseFunction
+// UnitTestLayer0
 
-class UnitTestParseFunction : public WsjcppUnitTestBase {
+class UnitTestLayer0 : public WsjcppUnitTestBase {
     public:
-        UnitTestParseFunction();
+        UnitTestLayer0();
         virtual bool doBeforeTest() override;
         virtual void executeTest() override;
         virtual bool doAfterTest() override;
 };
 
-REGISTRY_WSJCPP_UNIT_TEST(UnitTestParseFunction)
+REGISTRY_WSJCPP_UNIT_TEST(UnitTestLayer0)
 
-UnitTestParseFunction::UnitTestParseFunction()
-    : WsjcppUnitTestBase("UnitTestParseFunction") {
+UnitTestLayer0::UnitTestLayer0()
+    : WsjcppUnitTestBase("UnitTestLayer0") {
 }
 
 // ---------------------------------------------------------------------
 
-bool UnitTestParseFunction::doBeforeTest() {
+bool UnitTestLayer0::doBeforeTest() {
     // do something before test
     return true;
 }
 
 // ---------------------------------------------------------------------
 
-void UnitTestParseFunction::executeTest() {
-
+void UnitTestLayer0::executeTest() {
     std::string sTestContent = 
         "// hello \n"
         "int main(int argc, const char* argv[]) {\n"
@@ -51,7 +50,7 @@ void UnitTestParseFunction::executeTest() {
     };
 
     WsjcppParserCppLayer0 parser;
-    parser.parseByTokens(sTestContent, "UnitTestParseFunction.cpp");
+    parser.parseByTokens(sTestContent, "unit_test_layer0_sample.cpp");
     const std::vector<WsjcppParserCppLayer0Token> &vTokens = parser.getTokens();
     int nMin = std::min(vTokens.size(), vExpectedWords.size());
 
@@ -68,7 +67,7 @@ void UnitTestParseFunction::executeTest() {
 
 // ---------------------------------------------------------------------
 
-bool UnitTestParseFunction::doAfterTest() {
+bool UnitTestLayer0::doAfterTest() {
     // do somethig after test
     return true;
 }

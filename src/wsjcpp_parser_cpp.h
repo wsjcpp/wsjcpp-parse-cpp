@@ -97,7 +97,10 @@ class WsjcppParserCppLayer0 {
 
 enum class WsjcppParserCppLayer1TokenType {
     NONE = 1,
+    COMMENT = 10,
     INCLUDE = 20,
+    RETURN_TYPE = 30,
+    FUNCTION_NAME = 40,
 };
 
 class WsjcppParserCppLayer1Buffer {
@@ -124,6 +127,13 @@ class WsjcppParserCppLayer1Token {
         WsjcppParserCppLayer1Token(
             WsjcppParserCppLayer1TokenType nType
         );
+        WsjcppParserCppLayer1Token(
+            WsjcppParserCppLayer1TokenType nType,
+            const std::string &sValue
+        );
+        WsjcppParserCppLayer1TokenType getType() const;
+        const std::string &getValue() const;
+
         int getLineNumber() const;
         int getPositionInLine() const;
         const std::string &getFilepath() const;
@@ -132,6 +142,7 @@ class WsjcppParserCppLayer1Token {
         int m_nLineNumber;
         int m_nPositionInLine;
         std::string m_sFilepath;
+        std::string m_sValue;
 };
 
 class WsjcppParserCppLayer1 {

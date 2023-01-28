@@ -442,6 +442,23 @@ WsjcppParserCppLayer1Token::WsjcppParserCppLayer1Token(WsjcppParserCppLayer1Toke
     m_nType = nType;
 }
 
+WsjcppParserCppLayer1Token::WsjcppParserCppLayer1Token(
+    WsjcppParserCppLayer1TokenType nType,
+    const std::string &sValue
+) {
+    m_nType = nType;
+    m_sValue = sValue;
+}
+
+
+WsjcppParserCppLayer1TokenType WsjcppParserCppLayer1Token::getType() const {
+    return m_nType;
+}
+
+const std::string &WsjcppParserCppLayer1Token::getValue() const {
+    return m_sValue;
+}
+
 int WsjcppParserCppLayer1Token::getLineNumber() const {
     return m_nLineNumber;
 }
@@ -489,8 +506,6 @@ bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer
 const std::vector<WsjcppParserCppLayer1Token> &WsjcppParserCppLayer1::getTokens() {
     return m_vTokens;
 }
-        
-
 
 // ---------------------------------------------------------------------
 // WsjcppParserCpp

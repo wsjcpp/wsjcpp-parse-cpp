@@ -73,7 +73,25 @@ void UnitTestLayer1::executeTest() {
         WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::COMMENT, "// hello"),
         WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::INCLUDE, "<iostream>"),
         WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::RETURN_TYPE, "int"),
-        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::FUNCTION_NAME, "main")
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::FUNCTION_NAME, "main"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::ARGS_START, "("),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::ARG_TYPE, "int"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::ARG_NAME, "argc"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::ARG_TYPE, "const char *"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::ARG_NAME, "argv[]"), // ?
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::ARGS_END, ")"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::IMPLEMENTATION_START, "{"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::COMMENT, "/* test1 \n    some  */"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::VAR_TYPE, "std::string"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::VAR_NAME, "TAG"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::OPERATOR, "="),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::STRING, "\"MAIN\\\"test\""),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::END_OF_INSTRUCTION, ";"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::RETURN, "0"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::END_OF_INSTRUCTION, ";"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::IMPLEMENTATION_END, "}"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::END_OF_INSTRUCTION, ";")
+
         // "int", "main", "(", "int", "argc", ",", "const", "char", "*", "argv", "[", "]", ")",
         // "{",
         //     "/* test1 \n    some  */",

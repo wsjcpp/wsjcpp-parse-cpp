@@ -101,6 +101,18 @@ enum class WsjcppParserCppLayer1TokenType {
     INCLUDE = 20,
     RETURN_TYPE = 30,
     FUNCTION_NAME = 40,
+    ARGS_START = 50,
+    ARGS_END = 60,
+    ARG_TYPE = 70,
+    ARG_NAME = 80,
+    IMPLEMENTATION_START = 90,
+    IMPLEMENTATION_END = 100,
+    STRING = 110,
+    RETURN = 120,
+    END_OF_INSTRUCTION = 130,
+    VAR_TYPE = 140,
+    VAR_NAME = 150,
+    OPERATOR = 160
 };
 
 class WsjcppParserCppLayer1Buffer {

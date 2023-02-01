@@ -21,11 +21,11 @@ distribution:
 
 dependencies:
   - name: "wsjcpp-core"
-    version: "v0.2.2"
+    version: "v0.2.3"
     url: "https://github.com/wsjcpp/wsjcpp-core:master"
     origin: "https://github.com/"
     installation-dir: "./src.wsjcpp/wsjcpp_core"
-    installation-datetime: "Mon, 19 Dec 2022 17:19:42 GMT"
+    installation-datetime: "Wed, 01 Feb 2023 03:16:32 GMT"
 
 unit-tests:
   cases:

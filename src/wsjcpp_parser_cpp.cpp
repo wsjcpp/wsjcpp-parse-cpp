@@ -479,22 +479,37 @@ WsjcppParserCppLayer1::WsjcppParserCppLayer1() {
     m_pBuffer = nullptr;
 }
         
-bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer0Token> &m_vTokens, const std::string &sContentName) {
+bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer0Token> &vTokens, const std::string &sContentName) {
     int i = 0;
-    int nLength = m_vTokens.size();
+    int nLength = vTokens.size();
     m_pBuffer = new WsjcppParserCppLayer1Buffer(sContentName);
+    auto nType = WsjcppParserCppLayer1TokenType::NONE;
 
     while (i < nLength) {
-        WsjcppParserCppLayer0Token token0 = m_vTokens[i];
+        WsjcppParserCppLayer0Token token0 = vTokens[i];
         std::string sToken0 = token0.getValue();
         std::string sToken1 = "";
         if (i+1 < nLength) {
-            sToken1 = m_vTokens[i+1].getValue();
+            sToken1 = vTokens[i+1].getValue();
+        }
+        // if (sToken0.start == "#") {
+        // 
+        // }
+
+        if (nType == WsjcppParserCppLayer1TokenType::INCLUDE) {
+            m_vTokens.push_back(WsjcppParserCppLayer1Token(
+                nType,
+                sToken0
+            ));
+            i++;
+            continue;
         }
 
         if (sToken0 == "#" && sToken1 == "include") {
             // TODO include instruction
-            i++;
+            nType = WsjcppParserCppLayer1TokenType::INCLUDE;
+            i += 2;
+            continue;
         }
 
         i++;

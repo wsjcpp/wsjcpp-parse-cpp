@@ -492,19 +492,8 @@ bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer
         if (i+1 < nLength) {
             sToken1 = vTokens[i+1].getValue();
         }
-        // if (sToken0.start == "#") {
-        // 
-        // }
 
-        if (nType == WsjcppParserCppLayer1TokenType::INCLUDE) {
-            m_vTokens.push_back(WsjcppParserCppLayer1Token(
-                nType,
-                sToken0
-            ));
-            i++;
-            continue;
-        }
-
+        // include defined
         if (sToken0 == "#" && sToken1 == "include") {
             // TODO include instruction
             nType = WsjcppParserCppLayer1TokenType::INCLUDE;
@@ -512,6 +501,37 @@ bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer
             continue;
         }
 
+        // oneline comment
+        if (WsjcppCore::startsWith(sToken0, "//") && nType == WsjcppParserCppLayer1TokenType::NONE) {
+            m_vTokens.push_back(WsjcppParserCppLayer1Token(
+                WsjcppParserCppLayer1TokenType::COMMENT,
+                sToken0
+            ));
+            i++;
+            continue;
+        }
+
+        if (WsjcppCore::startsWith(sToken0, "\"") && nType == WsjcppParserCppLayer1TokenType::INCLUDE) {
+            m_vTokens.push_back(WsjcppParserCppLayer1Token(
+                nType,
+                sToken0
+            ));
+            i++;
+            nType = WsjcppParserCppLayer1TokenType::NONE;
+            continue;
+        }
+
+        if (sToken0 == "<" && nType == WsjcppParserCppLayer1TokenType::INCLUDE) {
+            m_vTokens.push_back(WsjcppParserCppLayer1Token(
+                nType,
+                sToken0 + sToken1 + vTokens[i+2].getValue() // TODO check
+            ));
+            i += 2;
+            nType = WsjcppParserCppLayer1TokenType::NONE;
+            continue;
+        }
+
+        // TODO error
         i++;
     }
     // TODO

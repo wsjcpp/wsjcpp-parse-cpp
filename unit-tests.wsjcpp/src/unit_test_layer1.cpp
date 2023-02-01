@@ -70,7 +70,7 @@ void UnitTestLayer1::executeTest() {
     
 
     std::vector<WsjcppParserCppLayer1Token> vExpectedWords1 = {
-        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::COMMENT, "// hello"),
+        WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::COMMENT, "// hello "),
         WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::INCLUDE, "<iostream>"),
         WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::RETURN_TYPE, "int"),
         WsjcppParserCppLayer1Token(WsjcppParserCppLayer1TokenType::FUNCTION_NAME, "main"),

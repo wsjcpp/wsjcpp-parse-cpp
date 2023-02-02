@@ -492,22 +492,15 @@ bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer
         if (i+1 < nLength) {
             sToken1 = vTokens[i+1].getValue();
         }
-
-        // include defined
-        if (sToken0 == "#" && sToken1 == "include") {
-            // TODO include instruction
-            nType = WsjcppParserCppLayer1TokenType::INCLUDE;
-            i += 2;
-            continue;
+        std::string sToken2 = "";
+        if (i+2 < nLength) {
+            sToken2 = vTokens[i+2].getValue();
         }
 
-        // oneline comment
-        if (WsjcppCore::startsWith(sToken0, "//") && nType == WsjcppParserCppLayer1TokenType::NONE) {
-            m_vTokens.push_back(WsjcppParserCppLayer1Token(
-                WsjcppParserCppLayer1TokenType::COMMENT,
-                sToken0
-            ));
-            i++;
+        // include defined
+        if (sToken0 == "#" && sToken1 == "include" && nType == WsjcppParserCppLayer1TokenType::NONE) {
+            nType = WsjcppParserCppLayer1TokenType::INCLUDE;
+            i += 2;
             continue;
         }
 
@@ -531,6 +524,32 @@ bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer
             continue;
         }
 
+        // oneline comment
+        if (WsjcppCore::startsWith(sToken0, "//") && nType == WsjcppParserCppLayer1TokenType::NONE) {
+            m_vTokens.push_back(WsjcppParserCppLayer1Token(
+                WsjcppParserCppLayer1TokenType::COMMENT,
+                sToken0
+            ));
+            i++;
+            continue;
+        }
+
+        // begin function
+        if (isStartFunction(vTokens, i) && nType == WsjcppParserCppLayer1TokenType::NONE) {
+            std::cout << "Found" << std::endl;
+            m_vTokens.push_back(WsjcppParserCppLayer1Token(
+                WsjcppParserCppLayer1TokenType::RETURN_TYPE,
+                sToken0
+            ));
+            i++;
+            m_vTokens.push_back(WsjcppParserCppLayer1Token(
+                WsjcppParserCppLayer1TokenType::FUNCTION_NAME,
+                sToken1
+            ));
+            i += 2;
+            continue;
+        }
+
         // TODO error
         i++;
     }
@@ -541,6 +560,55 @@ bool WsjcppParserCppLayer1::parseByTokens(const std::vector<WsjcppParserCppLayer
 const std::vector<WsjcppParserCppLayer1Token> &WsjcppParserCppLayer1::getTokens() {
     return m_vTokens;
 }
+
+bool WsjcppParserCppLayer1::isFuncNameOrType(const std::string &sToken) {
+    if (sToken.length() == 0) {
+        return false;
+    }
+    char c0 = sToken[0];
+    if (
+        !(c0 > 'a' && c0 < 'z')
+        && !(c0 > 'A' && c0 < 'Z')
+        && c0 != '_'
+    ) {
+        return false;
+    }
+    for (int i = 1; i < sToken.length(); i++) {
+        c0 = sToken[i];
+        if (
+            !(c0 > 'a' && c0 < 'z')
+            && !(c0 > 'A' && c0 < 'Z')
+            && !(c0 > '0' && c0 < '9')
+            && c0 != '_'
+        ) {
+            return false;
+        }
+    }
+    std::cout << "Can be function name: " << sToken << std::endl;
+    return true;
+}
+
+bool WsjcppParserCppLayer1::isStartFunction(const std::vector<WsjcppParserCppLayer0Token> &vTokens, int nStartPos) {
+    std::string sToken0 = "";
+    std::string sToken1 = "";
+    std::string sToken2 = "";
+
+    if (nStartPos < vTokens.size()) {
+        sToken0 = vTokens[nStartPos].getValue();
+    }
+    if (nStartPos+1 < vTokens.size()) {
+        sToken1 = vTokens[nStartPos+1].getValue();
+    }
+    if (nStartPos+2 < vTokens.size()) {
+        sToken2 = vTokens[nStartPos+2].getValue();
+    }
+    
+    if (isFuncNameOrType(sToken0) && isFuncNameOrType(sToken1) && sToken2 == "(") {
+        return true;
+    }
+    return false;
+}
+
 
 // ---------------------------------------------------------------------
 // WsjcppParserCpp

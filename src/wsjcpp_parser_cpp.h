@@ -165,6 +165,8 @@ class WsjcppParserCppLayer1 {
         
 
     private:
+        bool isFuncNameOrType(const std::string &sToken);
+        bool isStartFunction(const std::vector<WsjcppParserCppLayer0Token> &vTokens, int nStartPos);
         // void flushBuffer();
         // void throwErrorUnknownSymbol(const std::string &sMessage);
         
